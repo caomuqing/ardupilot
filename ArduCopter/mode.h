@@ -1193,3 +1193,51 @@ protected:
 
     uint32_t last_log_ms;   // system time of last time desired velocity was logging
 };
+
+class ModeZigzag : public Mode {        //a new mode for zigzag
+
+public:
+
+    // inherit constructor
+    using Copter::Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return false; }
+    bool is_autopilot() const override { return true; }
+
+    void zigzag_receive_signal_from_auxsw(uint8_t aux_switch_position);
+
+protected:
+
+    const char *name() const override { return "ZIGZAG"; }
+    const char *name4() const override { return "ZIZG"; }
+
+private:
+
+    void zigzag_auto_control();
+    void zigzag_manual_control();
+    bool zigzag_has_arr_at_dest();
+    void zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t next_A_or_B) const;
+    void zigzag_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle);
+    bool zigzag_set_destination(const Vector3f& destination);
+
+    struct {
+        bool A_hasbeen_defined;     //true if point A has been defined
+        bool B_hasbeen_defined;     //true if point B has been defined
+        Vector3f A_pos; //in NEU frame in cm relative to home location
+        Vector3f B_pos; //in NEU frame in cm relative to home location
+    } zigzag_waypoint_state;
+
+    struct {
+        uint32_t last_judge_pos_time;
+        Vector3f last_pos;
+        bool is_keeping_time;
+    } zigzag_judge_moving;
+
+    bool in_zigzag_manual_control;  //true if it's in manual control
+    bool zigzag_is_between_A_and_B;
+};

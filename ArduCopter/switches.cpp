@@ -730,6 +730,11 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
                 }
             }
             break;
+        case AUXSW_ZIGZAG_ENABLE:
+            if (control_mode == ZIGZAG) {
+                copter.mode_zigzag.zigzag_receive_signal_from_auxsw(ch_flag);
+            }
+            break;
     }
 }
 
