@@ -269,17 +269,17 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(uint8_t aux_switch_pos
 {
     // define point A and B
     if (!zigzag_waypoint_state.A_hasbeen_defined || !zigzag_waypoint_state.B_hasbeen_defined) {
-        if ((!zigzag_waypoint_state.A_hasbeen_defined && aux_switch_position == AUX_SWITCH_HIGH) || (!zigzag_waypoint_state.B_hasbeen_defined && aux_switch_position == AUX_SWITCH_LOW)) {
+        if ((!zigzag_waypoint_state.A_hasbeen_defined && aux_switch_position == 2) || (!zigzag_waypoint_state.B_hasbeen_defined && aux_switch_position == 0)) {
             Vector3f cur_pos = inertial_nav.get_position();
             zigzag_set_destination(cur_pos);
             return;
         }
     }
     else {
-        // AUX_SWITCH_LOW = 0
-        // AUX_SWITCH_MIDDLE = 1
-        // AUX_SWITCH_HIGH = 2
-        if ((aux_switch_position == AUX_SWITCH_HIGH) || (aux_switch_position == AUX_SWITCH_LOW)) {
+        // LOW = 0
+        // MIDDLE = 1
+        // HIGH = 2
+        if ((aux_switch_position == 2) || (aux_switch_position == 0)) {
             // calculate next point A or B
             // need to judge if the drone's position is between A and B
             Vector3f next_dest;
