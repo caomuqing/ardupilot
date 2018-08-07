@@ -1283,12 +1283,11 @@ private:
     void zigzag_manual_control();
     bool zigzag_has_arr_at_dest();
     void zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t next_A_or_B) const;
-    void zigzag_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle);
     bool zigzag_set_destination(const Vector3f& destination);
 
     struct {
-        bool A_hasbeen_defined;     //true if point A has been defined
-        bool B_hasbeen_defined;     //true if point B has been defined
+        bool A_hasbeen_defined;     
+        bool B_hasbeen_defined;     
         Vector3f A_pos; //in NEU frame in cm relative to home location
         Vector3f B_pos; //in NEU frame in cm relative to home location
     } zigzag_waypoint_state;
@@ -1299,6 +1298,6 @@ private:
         bool is_keeping_time;
     } zigzag_judge_moving;
 
-    bool in_zigzag_manual_control;  //true if it's in manual control
+    bool in_zigzag_manual_control;  
     bool zigzag_is_between_A_and_B;
 };

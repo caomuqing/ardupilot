@@ -17,8 +17,6 @@ bool Copter::ModeZigzag::init(bool ignore_checks)
         pos_control->set_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
         // the parameters are maximum climb and descent rates
         pos_control->set_accel_z(g.pilot_accel_z);
-        // Global parameters are all contained within the 'g' class.
-        // Parameters g;
 
         // initialise position_z and desired velocity_z
         if (!pos_control->is_active_z()) {
@@ -65,7 +63,6 @@ void Copter::ModeZigzag::run()
         zigzag_manual_control();
     }
 
-    //else, if B has already been defined
     //if it's in manual control part
     //receive pilot's inputs, do position and attitude control
     //else
@@ -74,16 +71,13 @@ void Copter::ModeZigzag::run()
     //else, fly to current destination
     else {
         if (in_zigzag_manual_control) {
-
             zigzag_manual_control();
-        }
-        else { //auto flight
+        }else { //auto flight
 
-            if (zigzag_has_arr_at_dest()) {  //if the plane has arrived at the current destination
+            if (zigzag_has_arr_at_dest()) {  //if the vehicle has arrived at the current destination
                 in_zigzag_manual_control = true;
                 loiter_nav->init_target();
-            }
-            else {
+            }else {
                 zigzag_auto_control();
             }
         }
@@ -331,24 +325,10 @@ bool Copter::ModeZigzag::zigzag_set_destination(const Vector3f& destination)
     else if (!zigzag_waypoint_state.B_hasbeen_defined) {
         zigzag_waypoint_state.B_pos = destination;
         zigzag_waypoint_state.B_hasbeen_defined = true;
-        // set yaw state
         return true;
     }
-
-    // set yaw state
-    //zigzag_set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
     // no need to check return status because terrain data is not used
     wp_nav->set_wp_destination(destination, false);
     return true;
 }
-
-// helper function to set yaw state and targets
-// void Copter::ModeZigzag::zigzag_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle)
-// {
-//     if (use_yaw) {
-//         auto_yaw.set_fixed_yaw(yaw_cd / 100.0f, 0.0f, 0, relative_angle);
-//     } else if (use_yaw_rate) {
-//         auto_yaw.set_rate(yaw_rate_cds);
-//     }
-// }
