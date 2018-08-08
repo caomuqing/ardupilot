@@ -168,8 +168,6 @@ public:
     };
     typedef enum aux_func aux_func_t;
 
-protected:
-
     // auxillary switch handling:
     enum aux_switch_pos {
         LOW,       // indicates auxiliary switch is in the low position (pwm <1200)
@@ -178,6 +176,8 @@ protected:
     };
 
     typedef enum aux_switch_pos aux_switch_pos_t;
+
+protected:
 
     virtual void init_aux_function(aux_func_t ch_option, aux_switch_pos_t);
     virtual void do_aux_function(aux_func_t ch_option, aux_switch_pos_t);
