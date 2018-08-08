@@ -251,11 +251,11 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t
 
 // called by AUXSW_ZIGZAG_ENABLE case in switches.cpp
 // used to record point A, B and give the signal to fly to next destination automatically
-void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(uint8_t aux_switch_position)
+void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch_pos_t aux_switch_position)
 {
     // define point A and B
     if (!zigzag_waypoint_state.A_hasbeen_defined || !zigzag_waypoint_state.B_hasbeen_defined) {
-        if ((!zigzag_waypoint_state.A_hasbeen_defined && aux_switch_position == 2) || (!zigzag_waypoint_state.B_hasbeen_defined && aux_switch_position == 0)) {
+        if ((!zigzag_waypoint_state.A_hasbeen_defined && aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (!zigzag_waypoint_state.B_hasbeen_defined && aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
             Vector3f cur_pos = inertial_nav.get_position();
             zigzag_set_destination(cur_pos);
             return;
@@ -265,7 +265,7 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(uint8_t aux_switch_pos
         // LOW = 0
         // MIDDLE = 1
         // HIGH = 2
-        if ((aux_switch_position == 2) || (aux_switch_position == 0)) {
+        if ((aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
             // calculate next point A or B
             // need to judge if the drone's position is between A and B
             Vector3f next_dest;

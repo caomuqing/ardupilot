@@ -1270,7 +1270,7 @@ public:
     bool allows_arming(bool from_gcs) const override { return false; }
     bool is_autopilot() const override { return true; }
 
-    void zigzag_receive_signal_from_auxsw(uint8_t aux_switch_position);
+    void zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch_pos_t aux_switch_position);
 
 protected:
 
