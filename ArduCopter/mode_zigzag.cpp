@@ -4,7 +4,7 @@
 * Init and run calls for zigzag flight mode
 */
 
-#define ZIGZAG_RANGE_AS_STATIC  3
+#define ZIGZAG_RANGE_AS_STATIC  9
 
 // zigzag_init - initialise zigzag controller
 bool Copter::ModeZigzag::init(bool ignore_checks)
@@ -180,7 +180,7 @@ bool Copter::ModeZigzag::zigzag_has_arr_at_dest()
             Vector3f cur_pos = inertial_nav.get_position();
             float dist_x = cur_pos.x - zigzag_judge_moving.last_pos.x;
             float dist_y = cur_pos.y - zigzag_judge_moving.last_pos.y;
-            if ((dist_x*dist_x + dist_y*dist_y) < (ZIGZAG_RANGE_AS_STATIC * ZIGZAG_RANGE_AS_STATIC)) {
+            if ((dist_x*dist_x + dist_y*dist_y) < ZIGZAG_RANGE_AS_STATIC) {
                 return true;
             }
             else {
