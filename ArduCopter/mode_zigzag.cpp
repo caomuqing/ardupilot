@@ -26,11 +26,9 @@ bool Copter::ModeZigzag::init(bool ignore_checks)
         }
 
         // initialise waypoint state
-        zigzag_waypoint_state.A_hasbeen_defined = false;
-        zigzag_waypoint_state.B_hasbeen_defined = false;
-        in_zigzag_manual_control = true;
         zigzag_is_between_A_and_B = false;
         zigzag_judge_moving.is_keeping_time = false;
+        stage = REQUIRE_A;
 
         return true;
     }
@@ -49,29 +47,20 @@ void Copter::ModeZigzag::run()
         return;
     }
 
-    // if B has not been defined
-    if (!zigzag_waypoint_state.B_hasbeen_defined) {
+    // manual control activated when point A B is not defined
+    if (stage == REQUIRE_A || stage == REQUIRE_B || stage == MANUAL_REGAIN) {
         // receive pilot's inputs, do position and attitude control
         zigzag_manual_control();
     }
-
-    //if it's in manual control part
-    //receive pilot's inputs, do position and attitude control
-    //else
     //judge if the plane has arrived at the current destination
-    //if yes, go to the manual control part by modifying parameter
+    //if yes, go to the manual control stage
     //else, fly to current destination
-    else {
-        if (in_zigzag_manual_control) {
-            zigzag_manual_control();
-        }else { //auto flight
-
-            if (zigzag_has_arr_at_dest()) {  //if the vehicle has arrived at the current destination
-                in_zigzag_manual_control = true;
-                loiter_nav->init_target();
-            }else {
-                zigzag_auto_control();
-            }
+    else { //auto flight
+        if (zigzag_has_arr_at_dest()) {  //if the vehicle has arrived at the current destination
+            stage = MANUAL_REGAIN;
+            loiter_nav->init_target();
+        }else {
+            zigzag_auto_control();
         }
     }
 }
@@ -197,7 +186,7 @@ bool Copter::ModeZigzag::zigzag_has_arr_at_dest()
 void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const
 {
     // calculate difference between A and B - vector AB and its direction
-    Vector3f pos_diff = zigzag_waypoint_state.B_pos - zigzag_waypoint_state.A_pos;
+    Vector3f pos_diff = zigzag_waypoint.B_pos - zigzag_waypoint.A_pos;
     // get current position
     Vector3f cur_pos = inertial_nav.get_position();
     if (!zigzag_is_between_A_and_B) {
@@ -213,16 +202,16 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
         // used to check if the drone is outside A-B scale
         int next_dir = 1;
         // if the drone's position is between A and B
-        float xa = zigzag_waypoint_state.A_pos.x;
-        float ya = zigzag_waypoint_state.A_pos.y;
-        float xb = zigzag_waypoint_state.B_pos.x;
-        float yb = zigzag_waypoint_state.B_pos.y;
+        float xa = zigzag_waypoint.A_pos.x;
+        float ya = zigzag_waypoint.A_pos.y;
+        float xb = zigzag_waypoint.B_pos.x;
+        float yb = zigzag_waypoint.B_pos.y;
         float xc = cur_pos.x;
         float yc = cur_pos.y;
         next_dest.z = cur_pos.z;
         if (next_A_or_B == RC_Channel::aux_switch_pos_t::LOW) {
             // calculate next B
-            Vector3f pos_diff_BC = cur_pos - zigzag_waypoint_state.B_pos;
+            Vector3f pos_diff_BC = cur_pos - zigzag_waypoint.B_pos;
             if ((pos_diff_BC.x*pos_diff.x + pos_diff_BC.y*pos_diff.y) > 0) {
                 next_dir = -1;
             }
@@ -235,7 +224,7 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
         }
         if (next_A_or_B == RC_Channel::aux_switch_pos_t::HIGH) {
             // calculate next A
-            Vector3f pos_diff_AC = cur_pos - zigzag_waypoint_state.A_pos;
+            Vector3f pos_diff_AC = cur_pos - zigzag_waypoint.A_pos;
             if ((pos_diff_AC.x*pos_diff.x + pos_diff_AC.y*pos_diff.y) < 0) {
                 next_dir = -1;
             }
@@ -254,15 +243,15 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
 void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch_pos_t aux_switch_position)
 {
     // define point A and B
-    if (!zigzag_waypoint_state.A_hasbeen_defined || !zigzag_waypoint_state.B_hasbeen_defined) {
-        if ((!zigzag_waypoint_state.A_hasbeen_defined && aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (!zigzag_waypoint_state.B_hasbeen_defined && aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
+    if (stage == REQUIRE_A || stage == REQUIRE_B) {
+        if ((stage == REQUIRE_A && aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (stage == REQUIRE_B && aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
             Vector3f cur_pos = inertial_nav.get_position();
             zigzag_set_destination(cur_pos);
             return;
         }
     }
-    else {
-        if ((aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
+    else {      // A and B have been defined
+        if (aux_switch_position != RC_Channel::aux_switch_pos_t::MIDDLE) { //switch position in HIGH or LOW
             // calculate next point A or B
             // need to judge if the drone's position is between A and B
             Vector3f next_dest;
@@ -272,12 +261,11 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
             zigzag_set_destination(next_dest);
             // initialise yaw
             auto_yaw.set_mode_to_default(false);
-            in_zigzag_manual_control = false;
+            stage = AUTO;
         }
-        else {
-            //regain the control
-            if (!in_zigzag_manual_control) {
-                in_zigzag_manual_control = true;
+        else {      //switch in middle position, regain the control
+            if (stage == AUTO) {
+                stage = MANUAL_REGAIN;
                 loiter_nav->init_target();
                 zigzag_is_between_A_and_B = true;
             }
@@ -305,15 +293,15 @@ bool Copter::ModeZigzag::zigzag_set_destination(const Vector3f& destination)
 #endif
 
     //define point A
-    if (!zigzag_waypoint_state.A_hasbeen_defined) {
-        zigzag_waypoint_state.A_pos = destination;
-        zigzag_waypoint_state.A_hasbeen_defined = true;
+    if (stage == REQUIRE_A) {
+        zigzag_waypoint.A_pos = destination;
+        stage = REQUIRE_B;     //next need to define point B
         return true;
     }
     //define point B
-    else if (!zigzag_waypoint_state.B_hasbeen_defined) {
-        zigzag_waypoint_state.B_pos = destination;
-        zigzag_waypoint_state.B_hasbeen_defined = true;
+    else if (stage == REQUIRE_B) {              //point B will only be defined after A is defined
+        zigzag_waypoint.B_pos = destination;
+        stage = MANUAL_REGAIN;                 //user is still in manual control until he turns the switch again to point A position
         return true;
     }
 

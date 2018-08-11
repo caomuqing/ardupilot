@@ -1285,12 +1285,19 @@ private:
     void zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const;
     bool zigzag_set_destination(const Vector3f& destination);
 
-    struct {
-        bool A_hasbeen_defined;     
-        bool B_hasbeen_defined;     
+    struct {   
         Vector3f A_pos; //in NEU frame in cm relative to home location
         Vector3f B_pos; //in NEU frame in cm relative to home location
-    } zigzag_waypoint_state;
+    } zigzag_waypoint;
+
+    enum zigzag_state {
+        REQUIRE_A,       // point A is not defined yet, pilot has manual control
+        REQUIRE_B,       // point A is not defined but A has been defined, pilot has manual control
+        AUTO,            // after A and B defined, pilot toggle the switch from one side to the other, vehicle flies autonomously
+        MANUAL_REGAIN    // pilot toggle the switch to middle position, has manual control
+    };
+
+    zigzag_state stage = REQUIRE_A;
 
     struct {
         uint32_t last_judge_pos_time;
@@ -1298,6 +1305,5 @@ private:
         bool is_keeping_time;
     } zigzag_judge_moving;
 
-    bool in_zigzag_manual_control;  
     bool zigzag_is_between_A_and_B;
 };
