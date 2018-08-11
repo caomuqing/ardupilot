@@ -1283,11 +1283,13 @@ private:
     void zigzag_manual_control();
     bool zigzag_has_arr_at_dest();
     void zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const;
-    bool zigzag_set_destination(const Vector3f& destination);
+    bool zigzag_set_destination(const Vector3f& destination, RC_Channel::aux_switch_pos_t aux_switch_position);
 
     struct {   
         Vector3f A_pos; //in NEU frame in cm relative to home location
         Vector3f B_pos; //in NEU frame in cm relative to home location
+        RC_Channel::aux_switch_pos_t switch_pos_A;     //switch position recorded as point A
+        RC_Channel::aux_switch_pos_t switch_pos_B;     //switch position recorded as point B
     } zigzag_waypoint;
 
     enum zigzag_state {

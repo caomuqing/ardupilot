@@ -191,10 +191,10 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
     Vector3f cur_pos = inertial_nav.get_position();
     if (!zigzag_is_between_A_and_B) {
         // if the drone's position is on the side of A or B
-        if (next_A_or_B == RC_Channel::aux_switch_pos_t::LOW) {
+        if (next_A_or_B == zigzag_waypoint.switch_pos_B) {
             next_dest = cur_pos + pos_diff;
         }
-        if (next_A_or_B == RC_Channel::aux_switch_pos_t::HIGH) {
+        if (next_A_or_B == zigzag_waypoint.switch_pos_A) {
             next_dest = cur_pos + pos_diff*(-1);
         }
     }
@@ -244,9 +244,9 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
 {
     // define point A and B
     if (stage == REQUIRE_A || stage == REQUIRE_B) {
-        if ((stage == REQUIRE_A && aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (stage == REQUIRE_B && aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
+        if (aux_switch_position != RC_Channel::aux_switch_pos_t::MIDDLE) {
             Vector3f cur_pos = inertial_nav.get_position();
-            zigzag_set_destination(cur_pos);
+            zigzag_set_destination(cur_pos, aux_switch_position);
             return;
         }
     }
@@ -258,7 +258,7 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
             zigzag_calculate_next_dest(next_dest, aux_switch_position);
             // initialise waypoint and spline controller
             wp_nav->wp_and_spline_init();
-            zigzag_set_destination(next_dest);
+            zigzag_set_destination(next_dest, aux_switch_position);
             // initialise yaw
             auto_yaw.set_mode_to_default(false);
             stage = AUTO;
@@ -279,7 +279,7 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
 // zigzag_set_destination - sets zigzag mode's target destination
 // Returns true if the fence is enabled and guided waypoint is within the fence
 // else return false if the waypoint is outside the fence
-bool Copter::ModeZigzag::zigzag_set_destination(const Vector3f& destination)
+bool Copter::ModeZigzag::zigzag_set_destination(const Vector3f& destination, RC_Channel::aux_switch_pos_t aux_switch_position)
 {
 
 #if AC_FENCE == ENABLED
@@ -295,16 +295,25 @@ bool Copter::ModeZigzag::zigzag_set_destination(const Vector3f& destination)
     //define point A
     if (stage == REQUIRE_A) {
         zigzag_waypoint.A_pos = destination;
+        zigzag_waypoint.switch_pos_A = aux_switch_position;
         stage = REQUIRE_B;     //next need to define point B
         return true;
     }
     //define point B
     else if (stage == REQUIRE_B) {              //point B will only be defined after A is defined
-        zigzag_waypoint.B_pos = destination;
-        stage = MANUAL_REGAIN;                 //user is still in manual control until he turns the switch again to point A position
-        return true;
+        //if user toggle to the switch position that were previously defined as A
+        //exit the function and do nothing
+        if(aux_switch_position == zigzag_waypoint.switch_pos_A){    
+            return true;
+        } else{
+            zigzag_waypoint.B_pos = destination;// define point B
+            zigzag_waypoint.switch_pos_B = aux_switch_position;
+            stage = MANUAL_REGAIN;              //user is still in manual control until he turns the switch again to point A position
+            return true;
+        }
     }
 
+    // when both A and B are defined and switch in not in middle position, set waypoint destination
     // no need to check return status because terrain data is not used
     wp_nav->set_wp_destination(destination, false);
     return true;
