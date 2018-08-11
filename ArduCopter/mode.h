@@ -1282,7 +1282,7 @@ private:
     void zigzag_auto_control();
     void zigzag_manual_control();
     bool zigzag_has_arr_at_dest();
-    void zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t next_A_or_B) const;
+    void zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const;
     bool zigzag_set_destination(const Vector3f& destination);
 
     struct {

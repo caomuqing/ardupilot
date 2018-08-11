@@ -194,7 +194,7 @@ bool Copter::ModeZigzag::zigzag_has_arr_at_dest()
 }
 
 // zigzag_calculate_next_dest - calculate next destination according to vector A-B and current position
-void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t next_A_or_B) const
+void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const
 {
     // calculate difference between A and B - vector AB and its direction
     Vector3f pos_diff = zigzag_waypoint_state.B_pos - zigzag_waypoint_state.A_pos;
@@ -202,10 +202,10 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t
     Vector3f cur_pos = inertial_nav.get_position();
     if (!zigzag_is_between_A_and_B) {
         // if the drone's position is on the side of A or B
-        if (next_A_or_B == 0) {
+        if (next_A_or_B == RC_Channel::aux_switch_pos_t::LOW) {
             next_dest = cur_pos + pos_diff;
         }
-        if (next_A_or_B == 2) {
+        if (next_A_or_B == RC_Channel::aux_switch_pos_t::HIGH) {
             next_dest = cur_pos + pos_diff*(-1);
         }
     }
@@ -220,7 +220,7 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t
         float xc = cur_pos.x;
         float yc = cur_pos.y;
         next_dest.z = cur_pos.z;
-        if (next_A_or_B == 0) {
+        if (next_A_or_B == RC_Channel::aux_switch_pos_t::LOW) {
             // calculate next B
             Vector3f pos_diff_BC = cur_pos - zigzag_waypoint_state.B_pos;
             if ((pos_diff_BC.x*pos_diff.x + pos_diff_BC.y*pos_diff.y) > 0) {
@@ -233,7 +233,7 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, uint8_t
             next_dest.x = cur_pos.x + next_dir*dis_ratio*pos_diff.x;
             next_dest.y = cur_pos.y + next_dir*dis_ratio*pos_diff.y;
         }
-        if (next_A_or_B == 2) {
+        if (next_A_or_B == RC_Channel::aux_switch_pos_t::HIGH) {
             // calculate next A
             Vector3f pos_diff_AC = cur_pos - zigzag_waypoint_state.A_pos;
             if ((pos_diff_AC.x*pos_diff.x + pos_diff_AC.y*pos_diff.y) < 0) {
@@ -262,9 +262,6 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
         }
     }
     else {
-        // LOW = 0
-        // MIDDLE = 1
-        // HIGH = 2
         if ((aux_switch_position == RC_Channel::aux_switch_pos_t::HIGH) || (aux_switch_position == RC_Channel::aux_switch_pos_t::LOW)) {
             // calculate next point A or B
             // need to judge if the drone's position is between A and B
