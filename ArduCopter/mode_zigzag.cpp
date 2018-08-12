@@ -183,7 +183,7 @@ bool Copter::ModeZigzag::zigzag_has_arr_at_dest()
 }
 
 // zigzag_calculate_next_dest - calculate next destination according to vector A-B and current position
-void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const
+bool Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const
 {
     // calculate difference between A and B - vector AB and its direction
     Vector3f pos_diff = zigzag_waypoint.B_pos - zigzag_waypoint.A_pos;
@@ -193,10 +193,13 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
         // if the drone's position is on the side of A or B
         if (next_A_or_B == zigzag_waypoint.switch_pos_B) {
             next_dest = cur_pos + pos_diff;
+            return true;
         }
         if (next_A_or_B == zigzag_waypoint.switch_pos_A) {
             next_dest = cur_pos + pos_diff*(-1);
+            return true;
         }
+        return false; //if next_dest not initialised, return false
     }
     else {
         // used to check if the drone is outside A-B scale
@@ -209,7 +212,10 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
         float xc = cur_pos.x;
         float yc = cur_pos.y;
         next_dest.z = cur_pos.z;
-        if (next_A_or_B == RC_Channel::aux_switch_pos_t::LOW) {
+        if (is_zero(xb - xa)) {   //protection against division by zero
+            return false;
+        }
+        if (next_A_or_B == zigzag_waypoint.switch_pos_B) {
             // calculate next B
             Vector3f pos_diff_BC = cur_pos - zigzag_waypoint.B_pos;
             if ((pos_diff_BC.x*pos_diff.x + pos_diff_BC.y*pos_diff.y) > 0) {
@@ -221,8 +227,9 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
             float dis_ratio = dis_BE / sqrtf((xa - xb)*(xa - xb) + (ya - yb)*(ya - yb));
             next_dest.x = cur_pos.x + next_dir*dis_ratio*pos_diff.x;
             next_dest.y = cur_pos.y + next_dir*dis_ratio*pos_diff.y;
+            return true;
         }
-        if (next_A_or_B == RC_Channel::aux_switch_pos_t::HIGH) {
+        if (next_A_or_B == zigzag_waypoint.switch_pos_A) {
             // calculate next A
             Vector3f pos_diff_AC = cur_pos - zigzag_waypoint.A_pos;
             if ((pos_diff_AC.x*pos_diff.x + pos_diff_AC.y*pos_diff.y) < 0) {
@@ -234,7 +241,9 @@ void Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
             float dis_ratio = dis_AE / sqrtf((xa - xb)*(xa - xb) + (ya - yb)*(ya - yb));
             next_dest.x = cur_pos.x + (-1)*next_dir*dis_ratio*pos_diff.x;
             next_dest.y = cur_pos.y + (-1)*next_dir*dis_ratio*pos_diff.y;
+            return true;
         }
+        return false; //if next_dest not initialised, return false
     }
 }
 
@@ -255,13 +264,14 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
             // calculate next point A or B
             // need to judge if the drone's position is between A and B
             Vector3f next_dest;
-            zigzag_calculate_next_dest(next_dest, aux_switch_position);
-            // initialise waypoint and spline controller
-            wp_nav->wp_and_spline_init();
-            zigzag_set_destination(next_dest, aux_switch_position);
-            // initialise yaw
-            auto_yaw.set_mode_to_default(false);
-            stage = AUTO;
+            if(zigzag_calculate_next_dest(next_dest, aux_switch_position)){
+                // initialise waypoint and spline controller
+                wp_nav->wp_and_spline_init();
+                zigzag_set_destination(next_dest, aux_switch_position);
+                // initialise yaw
+                auto_yaw.set_mode_to_default(false);
+                stage = AUTO;
+            }
         }
         else {      //switch in middle position, regain the control
             if (stage == AUTO) {
