@@ -985,7 +985,7 @@ private:
 #if !HAL_MINIMIZE_FEATURES && OPTFLOW == ENABLED
     ModeFlowHold mode_flowhold;
 #endif
-    ModeZigzag mode_zigzag;
+    ModeZigZag mode_zigzag;
 
     // mode.cpp
     Mode *mode_from_mode_num(const uint8_t mode);

@@ -7,7 +7,7 @@
 #define ZIGZAG_RANGE_AS_STATIC  9
 
 // zigzag_init - initialise zigzag controller
-bool Copter::ModeZigzag::init(bool ignore_checks)
+bool Copter::ModeZigZag::init(bool ignore_checks)
 {
     if (copter.position_ok() || ignore_checks) {
         // initialize's loiter position and velocity on xy-axes from current pos and velocity
@@ -39,7 +39,7 @@ bool Copter::ModeZigzag::init(bool ignore_checks)
 
 // zigzag_run - runs the zigzag controller
 // should be called at 100hz or more
-void Copter::ModeZigzag::run()
+void Copter::ModeZigZag::run()
 {
     // if not auto armed or motors not enabled set throttle to zero and exit immediately
     if (!motors->armed() || !ap.auto_armed || !motors->get_interlock() || ap.land_complete) {
@@ -66,7 +66,7 @@ void Copter::ModeZigzag::run()
 }
 
 //zigzag_auto_control - guide the plane to fly to current destination
-void Copter::ModeZigzag::zigzag_auto_control()
+void Copter::ModeZigZag::zigzag_auto_control()
 {
     // process pilot's yaw input
     float target_yaw_rate = 0;
@@ -103,7 +103,7 @@ void Copter::ModeZigzag::zigzag_auto_control()
 }
 
 //zigzag_manual_control - process manual control
-void Copter::ModeZigzag::zigzag_manual_control()
+void Copter::ModeZigZag::zigzag_manual_control()
 {
     float target_yaw_rate = 0.0f;
     float target_climb_rate = 0.0f;
@@ -157,7 +157,7 @@ void Copter::ModeZigzag::zigzag_manual_control()
 }
 
 //zigzag_has_arr_at_next_dest - judge if the plane is within a small area around the current destination
-bool Copter::ModeZigzag::zigzag_has_arr_at_dest()
+bool Copter::ModeZigZag::zigzag_has_arr_at_dest()
 {
     if (!zigzag_judge_moving.is_keeping_time) {
         zigzag_judge_moving.is_keeping_time = true;
@@ -183,7 +183,7 @@ bool Copter::ModeZigzag::zigzag_has_arr_at_dest()
 }
 
 // zigzag_calculate_next_dest - calculate next destination according to vector A-B and current position
-bool Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const
+bool Copter::ModeZigZag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Channel::aux_switch_pos_t next_A_or_B) const
 {
     // calculate difference between A and B - vector AB and its direction
     Vector3f pos_diff = zigzag_waypoint.B_pos - zigzag_waypoint.A_pos;
@@ -249,7 +249,7 @@ bool Copter::ModeZigzag::zigzag_calculate_next_dest(Vector3f& next_dest, RC_Chan
 
 // called by AUXSW_ZIGZAG_ENABLE case in switches.cpp
 // used to record point A, B and give the signal to fly to next destination automatically
-void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch_pos_t aux_switch_position)
+void Copter::ModeZigZag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch_pos_t aux_switch_position)
 {
     // define point A and B
     if (stage == REQUIRE_A || stage == REQUIRE_B) {
@@ -289,7 +289,7 @@ void Copter::ModeZigzag::zigzag_receive_signal_from_auxsw(RC_Channel::aux_switch
 // zigzag_set_destination - sets zigzag mode's target destination
 // Returns true if the fence is enabled and guided waypoint is within the fence
 // else return false if the waypoint is outside the fence
-bool Copter::ModeZigzag::zigzag_set_destination(const Vector3f& destination, RC_Channel::aux_switch_pos_t aux_switch_position)
+bool Copter::ModeZigZag::zigzag_set_destination(const Vector3f& destination, RC_Channel::aux_switch_pos_t aux_switch_position)
 {
 
 #if AC_FENCE == ENABLED

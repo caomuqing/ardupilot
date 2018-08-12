@@ -1255,7 +1255,7 @@ protected:
     uint32_t last_log_ms;   // system time of last time desired velocity was logging
 };
 
-class ModeZigzag : public Mode {        //a new mode for zigzag
+class ModeZigZag : public Mode {        //a new mode for zigzag
 
 public:
 
