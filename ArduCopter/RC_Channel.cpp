@@ -573,7 +573,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 #endif
 
         case ZIGZAG:
-            if (copter.control_mode == control_mode_t::ZIGZAG) {
+            if (copter.flightmode == &copter.mode_zigzag) {
                 copter.mode_zigzag.zigzag_receive_signal_from_auxsw(ch_flag);
             }
             break;
