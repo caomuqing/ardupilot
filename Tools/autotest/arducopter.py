@@ -1244,6 +1244,75 @@ class AutoTestCopter(AutoTest):
         if ex is not None:
             raise ex
 
+    def fly_zigzag_mode(self):
+        '''disable GPS navigation, enable Vicon input'''
+        # scribble down a location we can set origin to:
+
+        self.progress("Waiting for location")
+        start = self.mav.location()
+        self.mavproxy.send('switch 6\n')  # stabilize mode
+        self.mav.wait_heartbeat()
+        self.wait_mode('STABILIZE')
+        self.progress("Waiting reading for arm")
+        self.wait_ready_to_arm()
+
+        old_pos = self.mav.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
+        print("old_pos=%s" % str(old_pos))
+
+        self.context_push();
+
+        ex = None
+        try:
+            # set channel 8 for zigzag switch and recentre it
+            self.set_parameter("RC8_OPTION", 58)
+            self.set_rc(8, 1500)
+            self.mavproxy.send('mode loiter\n')
+            self.wait_mode('LOITER')
+            self.arm_vehicle()
+            # increase altitude until 5m
+            self.set_rc(3, 1700)
+            self.wait_altitude(5, 5.20, relative=True)
+            self.set_rc(3, 1500)
+            ZIGZAG = 24
+            self.mavproxy.send('mode %u\n' %ZIGZAG) #set Zigzag mode
+            self.wait_mode(ZIGZAG)
+            #
+            self.set_rc(1, 1700)
+            self.wait_distance(3)
+            self.set_rc(1, 1500)
+            self.set_rc(8, 1900)    # record point A
+            #
+            self.set_rc(2, 1700)
+            self.wait_distance(30)
+            self.set_rc(2, 1500)
+            self.set_rc(8, 1100)    # record point B
+            #
+            self.set_rc(1, 1700)    # fly side-way for 3 meter
+            self.wait_distance(3)
+            self.set_rc(1, 1500)
+            self.set_rc(8, 1900)    # auto execute vector BA
+            self.wait_distance(30)  # wait for it to finish
+            #
+            self.set_rc(1, 1700)    # fly side-way for 3 meter
+            self.wait_distance(3)
+            self.set_rc(1, 1500)
+            self.set_rc(8, 1100)    # auto execute vector AB
+            self.wait_distance(30)  # wait for it to finish
+            # recenter controls:
+            self.progress("# Enter RTL")
+            self.mavproxy.send('switch 3\n')
+
+        except Exception as e:
+            self.progress("Exception caught")
+            ex = e
+
+        self.context_pop();
+        self.set_rc(3, 1000)
+        self.reboot_sitl()
+
+        if ex is not None:
+            raise ex
+
     def test_setting_modes_via_modeswitch(self):
         self.context_push();
         ex = None
@@ -1588,6 +1657,9 @@ class AutoTestCopter(AutoTest):
 
             '''vision position''' # expects vehicle to be disarmed
             self.run_test("Fly Vision Position", self.fly_vision_position)
+
+            '''zigzag mode''' # expects vehicle to be disarmed
+            self.run_test("Fly ZigZag Mode", self.fly_zigzag_mode)
 
             # Download logs
             self.run_test("log download",
